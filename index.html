@@ -287,7 +287,7 @@ button,input,select,textarea { font-family: inherit; -webkit-appearance: none; a
 
 <script>
 /* ═══ CONFIG ════════════════════════════════════════════ */
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyJM1Y3tKbHf9Uy0qnudum17OPIs0nIv486caA4SCyo2WkhA8d4QOk9ayLsNMTOBWhfkw/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxn1yQz04AzAJGu6qbLqz3JMsv2QyofmklzhW8x8IHkh_0oVhbQqTN0GpLKSIsOLgHAKA/exec';
 
 /* ═══ STATE ════════════════════════════════════════════ */
 const S = {
@@ -325,17 +325,28 @@ function hideLoading() {
 
 /* ═══ GOOGLE SHEETS API ════════════════════════════════ */
 async function gasRead(sheet) {
-  const res = await fetch(`${GAS_URL}?action=read&sheet=${sheet}`);
-  const json = await res.json();
-  return json.data || [];
+  try {
+    const res = await fetch(`${GAS_URL}?action=read&sheet=${sheet}`);
+    const json = await res.json();
+    return json.data || [];
+  } catch(e) {
+    console.error('gasRead error:', e);
+    return [];
+  }
 }
 
 async function gasWrite(sheet, data) {
-  await fetch(GAS_URL, {
-    method: 'POST',
-    body: JSON.stringify({ data }),
-    headers: { 'Content-Type': 'application/json' },
-  });
+  try {
+    const params = new URLSearchParams({
+      action: 'write',
+      sheet: sheet,
+      data: JSON.stringify(data)
+    });
+    await fetch(`${GAS_URL}?${params.toString()}`);
+  } catch(e) {
+    console.error('gasWrite error:', e);
+    throw e;
+  }
 }
 
 /* sessions シート形式: [id, date, time, venue, note, participants(JSON)] */
@@ -362,10 +373,14 @@ function rowsToMembers(rows) {
 }
 
 async function saveAll() {
-  await Promise.all([
-    gasWrite('sessions', sessionsToRows(S.sessions)),
-    gasWrite('members',  membersToRows(S.members)),
-  ]);
+  try {
+    await gasWrite('sessions', sessionsToRows(S.sessions));
+    await gasWrite('members',  membersToRows(S.members));
+  } catch(e) {
+    console.error('saveAll error:', e);
+    toast('⚠️ 保存に失敗しました');
+    throw e;
+  }
 }
 
 async function loadAll() {
@@ -483,7 +498,7 @@ async function addSession() {
   ['s-date','s-venue','s-note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('s-time').value='11:00';
   showLoading('日程を保存中...');
-  await saveAll();
+  try { await saveAll(); } catch(e) {}
   hideLoading();
   renderSessions();
   toast('✅ 日程を追加しました');
@@ -519,7 +534,8 @@ function renderDetail(id) {
 async function removeP(sid, mid) {
   const s = getS(sid); s.participants = s.participants.filter(p=>p!==mid);
   showLoading('保存中...');
-  await saveAll(); hideLoading();
+  try { await saveAll(); } catch(e) {}
+  hideLoading();
   renderDetail(sid); toast('✅ 参加を取り消しました');
 }
 
@@ -527,7 +543,8 @@ async function delSession(id) {
   if(!confirm('この日程を削除しますか？')) return;
   S.sessions = S.sessions.filter(s=>s.id!==id);
   showLoading('削除中...');
-  await saveAll(); hideLoading();
+  try { await saveAll(); } catch(e) {}
+  hideLoading();
   showPage('sessions'); toast('🗑 日程を削除しました');
 }
 
@@ -565,7 +582,7 @@ async function toggleP(sid, mid) {
     toast('✅ 参加登録しました');
   }
   if(S.currentSid===sid) renderDetail(sid);
-  await saveAll();
+  try { await saveAll(); } catch(e) {}
 }
 
 /* ═══ MEMBERS ═══════════════════════════════════════════ */
@@ -594,7 +611,8 @@ async function addMember() {
   closeModal('addMember');
   ['m-name','m-note'].forEach(id=>document.getElementById(id).value='');
   showLoading('参加者を保存中...');
-  await saveAll(); hideLoading();
+  try { await saveAll(); } catch(e) {}
+  hideLoading();
   renderMembers(); updateStats(); toast('✅ 参加者を追加しました');
 }
 
@@ -603,7 +621,8 @@ async function delMember(id) {
   S.members = S.members.filter(m=>m.id!==id);
   S.sessions.forEach(s=>{ s.participants = s.participants.filter(p=>p!==id); });
   showLoading('削除中...');
-  await saveAll(); hideLoading();
+  try { await saveAll(); } catch(e) {}
+  hideLoading();
   renderMembers(); updateStats(); toast('🗑 参加者を削除しました');
 }
 
