@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>tennis hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ─── RESET & BASE ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, sans-serif;
+  background: #f4f6f4;
+  color: #1a2a1a;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+button, input, select, textarea { font-family: inherit; -webkit-appearance: none; appearance: none; }
+
+/* ─── CSS VARS ─────────────────────────────────────── */
+:root {
+  --green: #2d7a2d;
+  --green-l: #3da03d;
+  --green-xl: #e8f5e8;
+  --green-bg: #f0faf0;
+  --accent: #ff6b35;
+  --white: #ffffff;
+  --surface: #ffffff;
+  --surface2: #f7faf7;
+  --border: #d8e8d8;
+  --text: #1a2a1a;
+  --text2: #4a6a4a;
+  --text3: #8aaa8a;
+  --danger: #e53935;
+  --sidebar-w: 240px;
+  --bottom-nav-h: 64px;
+  --header-h: 56px;
+  --radius: 14px;
+  --radius-s: 8px;
+}
+
+/* ─── LAYOUT ───────────────────────────────────────── */
+.app { display: flex; min-height: 100vh; }
+
+/* SIDEBAR (PC only) */
+.sidebar {
+  display: none;
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: var(--green);
+  color: #fff;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  flex-direction: column;
+}
+.sidebar-logo {
+  padding: 28px 24px 20px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+.sidebar-logo span { display: block; font-family: 'Noto Sans JP', sans-serif; font-size: 0.65rem; font-weight: 300; letter-spacing: 0.15em; opacity: 0.7; margin-top: 2px; }
+.sidebar-nav { flex: 1; padding: 16px 0; }
+.sidebar-nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 24px; cursor: pointer;
+  font-size: 0.88rem; font-weight: 500;
+  color: rgba(255,255,255,0.7);
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+}
+.sidebar-nav-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.sidebar-nav-item.active { background: rgba(255,255,255,0.15); color: #fff; border-left-color: #fff; }
+.sidebar-nav-item .nav-icon { font-size: 1.2rem; width: 24px; text-align: center; }
+.sidebar-footer { padding: 20px 24px; border-top: 1px solid rgba(255,255,255,0.12); font-size: 0.72rem; color: rgba(255,255,255,0.4); }
+
+/* MAIN WRAP */
+.main-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* MOBILE HEADER */
+.mobile-header {
+  position: sticky; top: 0; z-index: 90;
+  background: var(--green);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 12px rgba(45,122,45,0.3);
+}
+.mobile-header-title { font-family: 'Noto Sans JP', sans-serif; font-size: 1.4rem; font-weight: 700; letter-spacing: 0.08em; padding: 10px 16px 6px; }
+.mobile-top-nav { display: flex; border-top: 1px solid rgba(255,255,255,0.15); }
+.mobile-top-nav-item {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 4px; cursor: pointer; border: none; background: none;
+  color: rgba(255,255,255,0.6); font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.82rem; font-weight: 700; letter-spacing: 0.04em;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s; -webkit-tap-highlight-color: transparent;
+}
+.mobile-top-nav-item.active { color: #fff; border-bottom-color: #fff; background: rgba(255,255,255,0.1); }
+.mobile-top-nav-item .bn-icon { font-size: 1.1rem; }
+.mobile-top-nav-item .bn-label { font-size: 0.8rem; }
+
+/* CONTENT */
+.content { flex: 1; padding: 16px 16px 40px; }
+.page { display: none; }
+.page.active { display: block; animation: fadeUp 0.28s ease; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+
+/* ─── COMPONENTS ───────────────────────────────────── */
+.sec-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.sec-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.7rem; color: var(--text); letter-spacing: 0.04em; }
+.sec-title small { display: block; font-family: 'Noto Sans JP', sans-serif; font-size: 0.68rem; font-weight: 400; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* Stats */
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 10px; text-align: center; }
+.stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: var(--green); line-height: 1; }
+.stat-lbl { font-size: 0.68rem; color: var(--text3); margin-top: 2px; }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 14px; background: var(--surface2); border-radius: 10px; padding: 3px; border: 1px solid var(--border); }
+.tab { flex: 1; padding: 7px; border: none; background: none; border-radius: 8px; font-size: 0.78rem; font-weight: 500; color: var(--text3); cursor: pointer; transition: all 0.2s; }
+.tab.active { background: var(--white); color: var(--green); font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 5px; padding: 9px 16px; border-radius: var(--radius-s); border: none; cursor: pointer; font-size: 0.82rem; font-weight: 700; transition: all 0.18s; -webkit-tap-highlight-color: transparent; }
+.btn:active { transform: scale(0.97); }
+.btn-green { background: var(--green); color: #fff; }
+.btn-green:hover { background: var(--green-l); }
+.btn-outline { background: #fff; color: var(--text2); border: 1px solid var(--border); }
+.btn-outline:hover { border-color: var(--green); color: var(--green); }
+.btn-danger { background: #fff0f0; color: var(--danger); border: 1px solid #ffd0d0; }
+.btn-sm { padding: 6px 12px; font-size: 0.78rem; }
+.btn-xs { padding: 4px 10px; font-size: 0.72rem; border-radius: 6px; }
+.btn-full { width: 100%; justify-content: center; }
+.btn-back { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; color: var(--text2); font-size: 0.82rem; padding: 0; margin-bottom: 14px; font-weight: 500; }
+
+/* Session card */
+.session-list { display: flex; flex-direction: column; gap: 10px; }
+.sess-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: box-shadow 0.2s, transform 0.15s; -webkit-tap-highlight-color: transparent; }
+.sess-card:active { transform: scale(0.99); }
+.sess-top { display: flex; align-items: stretch; }
+.sess-date-block { background: var(--green); color: #fff; width: 70px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px 8px; }
+.sess-day { font-family: 'Bebas Neue', sans-serif; font-size: 2.4rem; line-height: 1; }
+.sess-mon { font-size: 0.65rem; opacity: 0.8; }
+.sess-body { flex: 1; padding: 12px 14px; min-width: 0; }
+.sess-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; }
+.sess-meta { display: flex; flex-direction: column; gap: 3px; }
+.sess-meta-r { display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--text2); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 100px; font-size: 0.67rem; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px; }
+.badge-up { background: var(--green-xl); color: var(--green); }
+.badge-past { background: #f0f0f0; color: #999; }
+.sess-foot { border-top: 1px solid var(--border); padding: 9px 14px; display: flex; align-items: center; justify-content: space-between; }
+.p-avatars { display: flex; }
+.p-av { width: 24px; height: 24px; border-radius: 50%; background: var(--green-xl); border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--green); margin-left: -6px; }
+.p-av:first-child { margin-left: 0; }
+.p-count-txt { font-size: 0.75rem; color: var(--text3); margin-left: 8px; }
+.capacity-txt { font-size: 0.72rem; color: var(--text3); }
+.capacity-full { color: var(--danger) !important; font-weight: 700; }
+
+/* Member card */
+.member-list { display: flex; flex-direction: column; gap: 8px; }
+.member-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.m-icon { width: 46px; height: 46px; border-radius: 50%; background: var(--green-xl); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+.m-info { flex: 1; min-width: 0; }
+.m-name { font-weight: 700; font-size: 0.92rem; }
+.m-meta { font-size: 0.75rem; color: var(--text3); margin-top: 2px; }
+.level-badge { display: inline-block; padding: 2px 8px; border-radius: 100px; font-size: 0.68rem; font-weight: 700; }
+.lv-init { background: #e3f5ff; color: #0077cc; }
+.lv-mid  { background: #fff8e1; color: #cc7700; }
+.lv-adv  { background: #fde8e8; color: #cc2222; }
+
+/* Detail */
+.detail-hero { background: var(--green); color: #fff; border-radius: var(--radius); padding: 20px; margin-bottom: 14px; position: relative; overflow: hidden; }
+.detail-hero::after { content:'🎾'; position:absolute; right:-10px; bottom:-20px; font-size:6rem; opacity:0.08; pointer-events:none; }
+.detail-hero-date { font-size: 0.78rem; opacity: 0.8; margin-bottom: 4px; letter-spacing: 0.04em; }
+.detail-hero-title { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.04em; line-height: 1.1; margin-bottom: 14px; }
+.detail-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.detail-chip { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); border-radius: 100px; padding: 5px 12px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; }
+.detail-actions { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.detail-note { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-s); padding: 12px; font-size: 0.8rem; color: var(--text2); margin-bottom: 14px; line-height: 1.6; }
+.section-label { font-size: 0.75rem; font-weight: 700; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.section-label::after { content:''; flex:1; height:1px; background: var(--border); }
+.p-row { display: flex; align-items: center; gap: 10px; padding: 11px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-s); margin-bottom: 7px; }
+.p-row-info { flex: 1; }
+.p-row-name { font-weight: 600; font-size: 0.88rem; }
+.p-row-lv { font-size: 0.72rem; margin-top: 1px; }
+
+/* Search */
+.search-wrap { position: relative; margin-bottom: 12px; }
+.search-ico { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 0.9rem; pointer-events: none; }
+.search-inp { width: 100%; padding: 10px 14px 10px 36px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-s); font-size: 0.88rem; outline: none; color: var(--text); transition: border-color 0.2s; }
+.search-inp:focus { border-color: var(--green); }
+
+/* Modal */
+.modal-bg { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; visibility: hidden; transition: opacity 0.22s, visibility 0.22s; }
+.modal-bg.open { opacity: 1; pointer-events: all; visibility: visible; }
+.modal { background: var(--white); border-radius: 20px 20px 0 0; width: 100%; max-width: 540px; max-height: 92vh; overflow-y: auto; transform: translateY(60px); transition: transform 0.28s cubic-bezier(.32,.94,.6,1); padding-bottom: env(safe-area-inset-bottom); }
+.modal-bg.open .modal { transform: translateY(0); }
+.modal-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--border); margin: 12px auto 4px; }
+.modal-head { padding: 8px 20px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--white); z-index: 1; }
+.modal-title { font-weight: 700; font-size: 1.05rem; }
+.modal-close { background: var(--surface2); border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text2); }
+.modal-body { padding: 18px 20px; }
+.modal-foot { padding: 12px 20px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; background: var(--white); }
+
+/* Form */
+.f-group { margin-bottom: 14px; }
+.f-label { display: block; font-size: 0.73rem; font-weight: 700; color: var(--text3); margin-bottom: 5px; letter-spacing: 0.06em; text-transform: uppercase; }
+.f-inp, .f-sel, .f-ta { width: 100%; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-s); font-size: 0.88rem; color: var(--text); outline: none; transition: border-color 0.18s, box-shadow 0.18s; }
+.f-inp:focus, .f-sel:focus, .f-ta:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(45,122,45,0.12); }
+.f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* Register */
+.reg-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-s); margin-bottom: 7px; transition: all 0.18s; user-select: none; }
+.reg-item.checked { border-color: var(--green); background: var(--green-bg); }
+.reg-item input[type=checkbox] { display: none; }
+.reg-icon { font-size: 1.3rem; }
+.reg-info { flex: 1; }
+.reg-name { font-weight: 600; font-size: 0.88rem; }
+.reg-lv { font-size: 0.72rem; }
+.reg-check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border); background: var(--white); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.85rem; transition: all 0.18s; }
+.reg-item.checked .reg-check { background: var(--green); border-color: var(--green); color: #fff; }
+
+/* Toast */
+.toast-wrap { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 300; display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; }
+.toast { background: #222e22; color: #fff; padding: 10px 18px; border-radius: 100px; font-size: 0.82rem; white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,0.25); animation: toastIn 0.25s ease, toastOut 0.3s ease 2.5s forwards; }
+@keyframes toastIn  { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
+@keyframes toastOut { to { opacity:0; transform:translateY(-8px); } }
+
+/* Empty */
+.empty { text-align: center; padding: 48px 20px; color: var(--text3); }
+.empty-ico { font-size: 2.8rem; margin-bottom: 10px; opacity: 0.5; }
+.empty-txt { font-size: 0.85rem; }
+
+/* ─── PC (≥768px) ───────────────────────────────────── */
+@media (min-width: 768px) {
+  .sidebar { display: flex; }
+  .main-wrap { margin-left: var(--sidebar-w); padding-bottom: 0; }
+  .mobile-header { display: none; }
+  .content { padding: 28px 32px 40px; max-width: 960px; }
+
+  /* PC: side-by-side session grid */
+  .session-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* PC: wider detail chips */
+  .detail-hero { padding: 28px; }
+  .detail-hero-title { font-size: 2.4rem; }
+
+  /* PC: inline add buttons */
+  .pc-add-btn { display: inline-flex !important; }
+
+  /* Modal: centered on PC */
+  .modal-bg { align-items: center; padding: 20px; }
+  .modal { border-radius: 20px; max-height: 85vh; }
+  .modal-bg.open .modal { transform: none; animation: modalPop 0.22s ease; }
+  @keyframes modalPop { from { opacity:0; transform:scale(0.96); } to { opacity:1; transform:none; } }
+  .modal-handle { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR (PC) -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🎾 tennis hub<span>TENNIS MANAGEMENT</span></div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-nav-item active" onclick="showPage('sessions')" id="snav-sessions">
+        <span class="nav-icon">📅</span> 開催日程
+      </div>
+      <div class="sidebar-nav-item" onclick="showPage('members')" id="snav-members">
+        <span class="nav-icon">👥</span> 参加者管理
+      </div>
+    </nav>
+    <div class="sidebar-footer">© 2026 tennis hub</div>
+  </aside>
+
+  <div class="main-wrap">
+
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+      <div class="mobile-header-title">🎾 tennis hub</div>
+      <nav class="mobile-top-nav">
+        <button class="mobile-top-nav-item active" onclick="showPage('sessions')" id="bnav-sessions">
+          <span class="bn-icon">📅</span><span class="bn-label">日程</span>
+        </button>
+        <button class="mobile-top-nav-item" onclick="showPage('members')" id="bnav-members">
+          <span class="bn-icon">👥</span><span class="bn-label">参加者</span>
+        </button>
+      </nav>
+    </header>
+
+    <div class="content">
+
+      <!-- PAGE: SESSIONS -->
+      <div id="page-sessions" class="page active">
+        <div class="sec-header">
+          <div class="sec-title"><small>Schedule</small>開催日程</div>
+          <button class="btn btn-green btn-sm pc-add-btn" style="display:none" onclick="openModal('addSession')">＋ 日程追加</button>
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-num" id="st-total">0</div><div class="stat-lbl">総開催数</div></div>
+          <div class="stat-box"><div class="stat-num" id="st-up">0</div><div class="stat-lbl">今後の予定</div></div>
+          <div class="stat-box"><div class="stat-num" id="st-mem">0</div><div class="stat-lbl">参加者数</div></div>
+        </div>
+        <div class="tabs">
+          <button class="tab active" onclick="filterTab('upcoming',this)">今後</button>
+          <button class="tab" onclick="filterTab('past',this)">過去</button>
+          <button class="tab" onclick="filterTab('all',this)">すべて</button>
+        </div>
+        <div id="sessionsWrap" class="session-list"></div>
+      </div>
+
+      <!-- PAGE: DETAIL -->
+      <div id="page-detail" class="page">
+        <button class="btn-back" onclick="showPage('sessions')">← 日程一覧</button>
+        <div id="detailWrap"></div>
+      </div>
+
+      <!-- PAGE: MEMBERS -->
+      <div id="page-members" class="page">
+        <div class="sec-header">
+          <div class="sec-title"><small>Members</small>参加者管理</div>
+          <button class="btn btn-green btn-sm pc-add-btn" style="display:none" onclick="openModal('addMember')">＋ 参加者追加</button>
+        </div>
+        <div class="search-wrap">
+          <span class="search-ico">🔍</span>
+          <input class="search-inp" type="text" placeholder="名前で検索..." oninput="renderMembers(this.value)">
+        </div>
+        <div class="member-list" id="membersWrap"></div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: ADD SESSION -->
+<div class="modal-bg" id="modal-addSession">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <div class="modal-title">📅 日程を追加</div>
+      <button class="modal-close" onclick="closeModal('addSession')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="f-row">
+        <div class="f-group"><label class="f-label">日付 *</label><input type="date" class="f-inp" id="s-date"></div>
+        <div class="f-group"><label class="f-label">時間 *</label><input type="time" class="f-inp" id="s-time" value="11:00"></div>
+      </div>
+      <div class="f-group"><label class="f-label">場所 *</label><input type="text" class="f-inp" id="s-venue" list="venue-list" placeholder="例: 市民テニスコート 3番" autocomplete="off"><datalist id="venue-list"></datalist></div>
+      <div class="f-group"><label class="f-label">メモ</label><textarea class="f-ta" id="s-note" rows="3" placeholder="持ち物・注意事項など..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('addSession')">キャンセル</button>
+      <button class="btn btn-green" onclick="addSession()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ADD MEMBER -->
+<div class="modal-bg" id="modal-addMember">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <div class="modal-title">👤 参加者を追加</div>
+      <button class="modal-close" onclick="closeModal('addMember')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="f-group"><label class="f-label">名前 *</label><input type="text" class="f-inp" id="m-name" placeholder="山田 太郎"></div>
+      <div class="f-group"><label class="f-label">レベル</label><select class="f-sel" id="m-level"><option value="初級">初級</option><option value="中級" selected>中級</option><option value="上級">上級</option></select></div>
+      <div class="f-group"><label class="f-label">メモ</label><input type="text" class="f-inp" id="m-note" placeholder="例: 週末のみ参加可"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('addMember')">キャンセル</button>
+      <button class="btn btn-green" onclick="addMember()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: REGISTER -->
+<div class="modal-bg" id="modal-register">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <div class="modal-title">👤 参加登録・変更</div>
+      <button class="modal-close" onclick="closeModal('register')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.8rem;color:var(--text3);margin-bottom:12px">チェックで参加登録、外すと取消になります</p>
+      <div id="regList"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-green btn-full" onclick="closeModal('register')">完了</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* ═══ STATE ════════════════════════════════════════════ */
+const S = {
+  sessions: [
+    { id:1, date:'2026-03-11', time:'19:00', venue:'市民テニスコート 3番', note:'ラケット持参。雨天中止の場合は前日20時にLINEで連絡します。', participants:[1,2,3] },
+    { id:2, date:'2026-03-14', time:'08:00', venue:'緑ヶ丘テニスクラブ', note:'朝食持参OK。駐車場あり。', participants:[1,4] },
+    { id:3, date:'2026-02-22', time:'14:00', venue:'市民テニスコート 1番', note:'', participants:[2,3,4,5] },
+  ],
+  members: [
+    { id:1, name:'田中 花子', level:'中級', note:'毎週参加', emoji:'🌸' },
+    { id:2, name:'山田 太郎', level:'上級', note:'コーチ経験あり', emoji:'🏆' },
+    { id:3, name:'鈴木 一郎', level:'初級', note:'初参加', emoji:'🌱' },
+    { id:4, name:'佐藤 みき', level:'中級', note:'', emoji:'⭐' },
+    { id:5, name:'高橋 けいた', level:'上級', note:'元実業団', emoji:'🎯' },
+  ],
+  nextSid:10, nextMid:10, filter:'upcoming', currentSid:null,
+};
+
+/* ═══ UTILS ════════════════════════════════════════════ */
+const todayStr = () => new Date().toISOString().slice(0,10);
+const isUp  = s => s.date >= todayStr();
+const getM  = id => S.members.find(m=>m.id===id);
+const getS  = id => S.sessions.find(s=>s.id===id);
+const fmtDate = d => new Date(d+'T00:00:00').toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+const fmtDay  = d => new Date(d+'T00:00:00').getDate();
+const fmtMon  = d => new Date(d+'T00:00:00').toLocaleDateString('ja-JP',{month:'short'});
+const lvClass = l => ({初級:'lv-init',中級:'lv-mid',上級:'lv-adv'}[l]||'');
+const lvColor = l => ({初級:'#0077cc',中級:'#cc7700',上級:'#cc2222'}[l]||'#888');
+const isPC = () => window.innerWidth >= 768;
+
+function toast(msg){
+  const w=document.getElementById('toastWrap');
+  const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+  w.appendChild(t); setTimeout(()=>t.remove(),3000);
+}
+
+/* ═══ PAGE NAV ══════════════════════════════════════════ */
+function showPage(name, sid){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.mobile-top-nav-item').forEach(b=>b.classList.remove('active'));
+  const bnav=document.getElementById('bnav-'+name); if(bnav) bnav.classList.add('active');
+  document.querySelectorAll('.sidebar-nav-item').forEach(b=>b.classList.remove('active'));
+  const snav=document.getElementById('snav-'+name); if(snav) snav.classList.add('active');
+  // PC add buttons
+  document.querySelectorAll('.pc-add-btn').forEach(b=>b.style.display='none');
+  if(name==='sessions') { const b=document.querySelector('#page-sessions .pc-add-btn'); if(b&&isPC()) b.style.display=''; }
+  if(name==='members')  { const b=document.querySelector('#page-members .pc-add-btn');  if(b&&isPC()) b.style.display=''; }
+  if(name==='sessions') renderSessions();
+  if(name==='members')  renderMembers();
+  if(name==='detail'&&sid){ S.currentSid=sid; renderDetail(sid); }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ═══ MODAL ═════════════════════════════════════════════ */
+function openModal(n){ if(n==='addSession') updateVenueList(); document.getElementById('modal-'+n).classList.add('open'); document.body.style.overflow='hidden'; }
+function closeModal(n){ document.getElementById('modal-'+n).classList.remove('open'); document.body.style.overflow=''; }
+document.querySelectorAll('.modal-bg').forEach(o=>{
+  o.addEventListener('click',e=>{ if(e.target===o){ o.classList.remove('open'); document.body.style.overflow=''; } });
+});
+
+/* ═══ SESSIONS ══════════════════════════════════════════ */
+function filterTab(type,btn){
+  S.filter=type;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); renderSessions();
+}
+
+function renderSessions(){
+  updateStats();
+  const wrap=document.getElementById('sessionsWrap');
+  let list=[...S.sessions].sort((a,b)=>a.date.localeCompare(b.date));
+  if(S.filter==='upcoming') list=list.filter(s=>isUp(s));
+  if(S.filter==='past')     list=list.filter(s=>!isUp(s));
+  if(!list.length){ wrap.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="empty-ico">📅</div><div class="empty-txt">日程がありません</div></div>`; return; }
+  wrap.innerHTML=list.map(s=>{
+    const up=isUp(s);
+    const avatars=s.participants.slice(0,5).map(pid=>{ const m=getM(pid); return m?`<div class="p-av" title="${m.name}">${m.emoji}</div>`:''; }).join('');
+    const more=s.participants.length>5?`<div class="p-av">+${s.participants.length-5}</div>`:'';
+    return `<div class="sess-card" onclick="showPage('detail',${s.id})">
+      <div class="sess-top">
+        <div class="sess-date-block"><div class="sess-day">${fmtDay(s.date)}</div><div class="sess-mon">${fmtMon(s.date)}</div></div>
+        <div class="sess-body">
+          <span class="badge ${up?'badge-up':'badge-past'}">${up?'予定':'終了'}</span>
+          <div class="sess-title">${fmtDate(s.date)} ${s.time}</div>
+          <div class="sess-meta">
+            <div class="sess-meta-r">🕐 ${fmtDate(s.date)} ${s.time}</div>
+            <div class="sess-meta-r">📍 ${s.venue}</div>
+          </div>
+        </div>
+      </div>
+      <div class="sess-foot">
+        <div style="display:flex;align-items:center"><div class="p-avatars">${avatars}${more}</div><span class="p-count-txt">${s.participants.length}人参加</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateStats(){
+  document.getElementById('st-total').textContent=S.sessions.length;
+  document.getElementById('st-up').textContent=S.sessions.filter(s=>isUp(s)).length;
+  document.getElementById('st-mem').textContent=S.members.length;
+}
+
+function updateVenueList(){
+  const venues=[...new Set(S.sessions.map(s=>s.venue).filter(Boolean))];
+  const dl=document.getElementById('venue-list');
+  dl.innerHTML=venues.map(v=>`<option value="${v}">`).join('');
+}
+
+function addSession(){
+  const date =document.getElementById('s-date').value;
+  const time =document.getElementById('s-time').value;
+  const venue=document.getElementById('s-venue').value.trim();
+  if(!date||!time||!venue){ toast('⚠️ 必須項目（*）を入力してください'); return; }
+  S.sessions.push({ id:S.nextSid++, date, time, venue, note:document.getElementById('s-note').value, participants:[] });
+  closeModal('addSession');
+  ['s-date','s-venue','s-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('s-time').value='11:00';
+  renderSessions(); toast('✅ 日程を追加しました');
+}
+
+/* ═══ DETAIL ════════════════════════════════════════════ */
+function renderDetail(id){
+  const s=getS(id); if(!s) return;
+  const up=isUp(s);
+  const pRows=s.participants.length===0
+    ?`<div class="empty" style="padding:24px"><div class="empty-ico">👥</div><div class="empty-txt">まだ参加者がいません</div></div>`
+    :s.participants.map(pid=>{ const m=getM(pid); if(!m) return '';
+      return `<div class="p-row"><div class="m-icon" style="width:36px;height:36px;font-size:1rem">${m.emoji}</div><div class="p-row-info"><div class="p-row-name">${m.name}</div><div class="p-row-lv" style="color:${lvColor(m.level)}">${m.level}</div></div><button class="btn btn-danger btn-xs" onclick="removeP(${id},${m.id})">取消</button></div>`;
+    }).join('');
+  document.getElementById('detailWrap').innerHTML=`
+    <div class="detail-hero">
+      <div class="detail-hero-date">${fmtDate(s.date)} ${s.time} <span class="badge ${up?'badge-up':'badge-past'}">${up?'予定':'終了'}</span></div>
+      <div class="detail-chips">
+        <div class="detail-chip">📍 ${s.venue}</div>
+        <div class="detail-chip">👥 参加${s.participants.length}名</div>
+      </div>
+    </div>
+    ${s.note?`<div class="detail-note">📝 ${s.note}</div>`:''}
+    <div class="detail-actions">
+      <button class="btn btn-green btn-sm" onclick="openRegister(${id})">👤 参加登録・変更</button>
+      <button class="btn btn-danger btn-sm" onclick="delSession(${id})">🗑 日程を削除</button>
+    </div>
+    <div class="section-label">参加者 (${s.participants.length}名)</div>
+    ${pRows}
+  `;
+}
+
+function removeP(sid,mid){
+  const s=getS(sid); s.participants=s.participants.filter(p=>p!==mid);
+  renderDetail(sid); toast('✅ 参加を取り消しました');
+}
+
+function delSession(id){
+  if(!confirm('この日程を削除しますか？')) return;
+  S.sessions=S.sessions.filter(s=>s.id!==id);
+  showPage('sessions'); toast('🗑 日程を削除しました');
+}
+
+/* ═══ REGISTER ══════════════════════════════════════════ */
+function openRegister(sid){
+  const s=getS(sid);
+  const list=document.getElementById('regList');
+  list.innerHTML=!S.members.length
+    ?`<div class="empty"><div class="empty-txt">参加者が登録されていません</div></div>`
+    :S.members.map(m=>{
+      const checked=s.participants.includes(m.id);
+      return `<div class="reg-item ${checked?'checked':''}" id="reg-${sid}-${m.id}" onclick="toggleP(${sid},${m.id})" style="cursor:pointer">
+        <div class="reg-icon">${m.emoji}</div>
+        <div class="reg-info"><div class="reg-name">${m.name}</div><div class="reg-lv" style="color:${lvColor(m.level)}">${m.level}</div></div>
+        <div class="reg-check">${checked?'✓':''}</div>
+      </div>`;
+    }).join('');
+  openModal('register');
+}
+
+function toggleP(sid,mid){
+  const s=getS(sid);
+  const lbl=document.getElementById(`reg-${sid}-${mid}`);
+  const icon=lbl&&lbl.querySelector('.reg-check');
+  const nowChecked=s.participants.includes(mid);
+  if(nowChecked){
+    s.participants=s.participants.filter(p=>p!==mid);
+    lbl&&lbl.classList.remove('checked');
+    if(icon) icon.textContent='';
+    toast('✅ 参加を取り消しました');
+  } else {
+    s.participants.push(mid);
+    lbl&&lbl.classList.add('checked');
+    if(icon) icon.textContent='✓';
+    toast('✅ 参加登録しました');
+  }
+  if(S.currentSid===sid) renderDetail(sid);
+}
+
+/* ═══ MEMBERS ═══════════════════════════════════════════ */
+function renderMembers(q=''){
+  const wrap=document.getElementById('membersWrap');
+  const list=S.members.filter(m=>m.name.includes(q));
+  if(!list.length){ wrap.innerHTML=`<div class="empty"><div class="empty-ico">👤</div><div class="empty-txt">見つかりません</div></div>`; return; }
+  wrap.innerHTML=list.map(m=>{
+    const cnt=S.sessions.filter(s=>s.participants.includes(m.id)).length;
+    return `<div class="member-card">
+      <div class="m-icon">${m.emoji}</div>
+      <div class="m-info">
+        <div class="m-name">${m.name}</div>
+        <div class="m-meta"><span class="level-badge ${lvClass(m.level)}">${m.level}</span> 参加${cnt}回${m.note?` · ${m.note}`:''}</div>
+      </div>
+      <button class="btn btn-danger btn-xs" onclick="delMember(${m.id})">削除</button>
+    </div>`;
+  }).join('');
+}
+
+function addMember(){
+  const name=document.getElementById('m-name').value.trim();
+  if(!name){ toast('⚠️ 名前を入力してください'); return; }
+  const emojis=['🎾','🏆','⭐','🌟','🎯','🌱','💪','🔥','✨','🎪','🌸','🦁','🐯','🦊'];
+  S.members.push({ id:S.nextMid++, name, level:document.getElementById('m-level').value, note:document.getElementById('m-note').value, emoji:emojis[Math.floor(Math.random()*emojis.length)] });
+  closeModal('addMember');
+  ['m-name','m-note'].forEach(id=>document.getElementById(id).value='');
+  renderMembers(); updateStats(); toast('✅ 参加者を追加しました');
+}
+
+function delMember(id){
+  if(!confirm('この参加者を削除しますか？')) return;
+  S.members=S.members.filter(m=>m.id!==id);
+  S.sessions.forEach(s=>{ s.participants=s.participants.filter(p=>p!==id); });
+  renderMembers(); updateStats(); toast('🗑 参加者を削除しました');
+}
+
+/* ═══ INIT ══════════════════════════════════════════════ */
+// Show PC buttons on load if PC
+if(isPC()){ const b=document.querySelector('#page-sessions .pc-add-btn'); if(b) b.style.display=''; }
+window.addEventListener('resize',()=>{ renderSessions(); });
+renderSessions();
+</script>
+</body>
+</html>
