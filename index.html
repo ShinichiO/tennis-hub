@@ -324,16 +324,32 @@ function hideLoading() {
 }
 
 /* ═══ GOOGLE SHEETS API ════════════════════════════════ */
-// GAS通信 - no-cors fetchで書き込み、読み込みはiframe経由
-function gasRequest(params) {
+// GAS通信 - リダイレクト先URLを解決してからJSONPで通信
+let _gasResolvedUrl = null;
+
+async function resolveUrl() {
+  if (_gasResolvedUrl) return _gasResolvedUrl;
+  // fetchのno-corsでリダイレクトを追い、responseのURLを取得
+  try {
+    const res = await fetch(GAS_URL + '?action=ping&sheet=sessions&callback=_ping', {
+      method: 'GET',
+      redirect: 'follow',
+    });
+    _gasResolvedUrl = res.url.split('?')[0];
+  } catch(e) {
+    _gasResolvedUrl = GAS_URL;
+  }
+  return _gasResolvedUrl;
+}
+
+function gasJsonp(baseUrl, params) {
   return new Promise((resolve, reject) => {
-    const cbName = '_cb' + Date.now() + Math.floor(Math.random()*9999);
+    const cbName = '_cb' + Date.now() + Math.floor(Math.random()*99999);
     const script = document.createElement('script');
     let done = false;
     const timer = setTimeout(() => {
-      if(done) return;
-      done = true;
-      cleanup();
+      if (done) return;
+      done = true; cleanup();
       reject(new Error('timeout'));
     }, 20000);
     function cleanup() {
@@ -342,19 +358,18 @@ function gasRequest(params) {
       try { document.head.removeChild(script); } catch(e) {}
     }
     window[cbName] = (data) => {
-      if(done) return;
-      done = true;
-      cleanup();
+      if (done) return;
+      done = true; cleanup();
       resolve(data);
     };
-    const qs = Object.entries({...params, callback: cbName})
-      .map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&');
-    script.src = GAS_URL + '?' + qs;
-    script.crossOrigin = 'anonymous';
+    const allParams = Object.assign({}, params, { callback: cbName });
+    const qs = Object.keys(allParams).map(k =>
+      encodeURIComponent(k) + '=' + encodeURIComponent(allParams[k])
+    ).join('&');
+    script.src = baseUrl + '?' + qs;
     script.onerror = () => {
-      if(done) return;
-      done = true;
-      cleanup();
+      if (done) return;
+      done = true; cleanup();
       reject(new Error('script error'));
     };
     document.head.appendChild(script);
@@ -363,7 +378,8 @@ function gasRequest(params) {
 
 async function gasRead(sheet) {
   try {
-    const res = await gasRequest({ action: 'read', sheet: sheet });
+    const url = await resolveUrl();
+    const res = await gasJsonp(url, { action: 'read', sheet: sheet });
     return res.data || [];
   } catch(e) {
     console.error('gasRead error:', e);
@@ -373,7 +389,8 @@ async function gasRead(sheet) {
 
 async function gasWrite(sheet, data) {
   try {
-    const res = await gasRequest({ action: 'write', sheet: sheet, data: JSON.stringify(data) });
+    const url = await resolveUrl();
+    const res = await gasJsonp(url, { action: 'write', sheet: sheet, data: JSON.stringify(data) });
     if (res && res.error) throw new Error(res.error);
   } catch(e) {
     console.error('gasWrite error:', e);
